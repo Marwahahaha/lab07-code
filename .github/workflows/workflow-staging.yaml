@@ -57,4 +57,4 @@ jobs:
 
       - name: Deploy to Azure Web App
         run: |
-          az webapp deploy --resource-group ${{ secrets.AZURE_RESOURCE_GROUP_NAME_staging }} --name ${{ secrets.AZURE_WEBAPP_NAME_staging }} --src-path release.zip --type zip
+          az webapp deploy --resource-group ${{ secrets.AZURE_RESOURCE_GROUP_NAME_staging }} --name ${{ secrets.AZURE_APP_NAME_staging }} --src-path release.zip --type zip
