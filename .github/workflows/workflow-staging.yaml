@@ -1,0 +1,60 @@
+name: Build & Deploy
+
+on:
+  push:
+    branches:
+      - staging
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dontet@v4
+        with:
+          dotnet-version: '8.0.x'
+      
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Publish application
+        run: dotnet publish -c Release
+
+      - name: Create zip file
+        run: |
+          cd MinimalAPI/bin/Release/net8.0/publish
+          zip -r ~/release.zip .
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name:  build-artifact
+          path: ~/release.zip
+
+  deploy:
+    permissions:
+      id-token: write
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifact
+          path: .
+
+      - name: Login to Azure
+        uses: azure/login@v2.3.0
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+
+      - name: Deploy to Azure Web App
+        run: |
+          az webapp deploy --resource-group ${{ secrets.AZURE_RESOURCE_GROUP_NAME_staging }} --name ${{ secrets.AZURE_WEBAPP_NAME_staging }} --src-path release.zip --type zip
